@@ -1,32 +1,39 @@
 import logging
 import os
 
-import structlog
+try:
+    import structlog
+except Exception:
+    structlog = None
 
 
 ENV_MODE = os.getenv("ENV_MODE", "LOCAL")
 
-renderer = [structlog.processors.JSONRenderer()]
-if ENV_MODE.lower() == "local".lower():
-    renderer = [structlog.dev.ConsoleRenderer()]
+if structlog:
+    renderer = [structlog.processors.JSONRenderer()]
+    if ENV_MODE.lower() == "local".lower():
+        renderer = [structlog.dev.ConsoleRenderer()]
 
-structlog.configure(
-    processors=[
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.dict_tracebacks,
-        structlog.processors.CallsiteParameterAdder(
-            {
-                structlog.processors.CallsiteParameter.FILENAME,
-                structlog.processors.CallsiteParameter.FUNC_NAME,
-                structlog.processors.CallsiteParameter.LINENO,
-            }
-        ),
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.contextvars.merge_contextvars,
-        *renderer,
-    ],
-    cache_logger_on_first_use=True,
-)
+    structlog.configure(
+        processors=[
+            structlog.stdlib.add_log_level,
+            structlog.stdlib.PositionalArgumentsFormatter(),
+            structlog.processors.dict_tracebacks,
+            structlog.processors.CallsiteParameterAdder(
+                {
+                    structlog.processors.CallsiteParameter.FILENAME,
+                    structlog.processors.CallsiteParameter.FUNC_NAME,
+                    structlog.processors.CallsiteParameter.LINENO,
+                }
+            ),
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.contextvars.merge_contextvars,
+            *renderer,
+        ],
+        cache_logger_on_first_use=True,
+    )
 
-logger: structlog.stdlib.BoundLogger = structlog.get_logger(level=logging.DEBUG)
+    logger = structlog.get_logger(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger("openmanus")

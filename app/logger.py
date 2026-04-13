@@ -1,7 +1,10 @@
 import sys
 from datetime import datetime
 
-from loguru import logger as _logger
+try:
+    from loguru import logger as _logger
+except Exception:
+    _logger = None
 
 from app.config import PROJECT_ROOT
 
@@ -13,6 +16,12 @@ def define_log_level(print_level="INFO", logfile_level="DEBUG", name: str = None
     """Adjust the log level to above level"""
     global _print_level
     _print_level = print_level
+
+    if _logger is None:
+        import logging
+
+        logging.basicConfig(level=getattr(logging, print_level, logging.INFO))
+        return logging.getLogger("openmanus")
 
     current_date = datetime.now()
     formatted_date = current_date.strftime("%Y%m%d%H%M%S")

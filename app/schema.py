@@ -185,3 +185,207 @@ class Memory(BaseModel):
     def to_dict_list(self) -> List[dict]:
         """Convert messages to list of dicts"""
         return [msg.to_dict() for msg in self.messages]
+
+
+class CDCEventType(str, Enum):
+    influenza_school = "influenza_school"
+    covid_community = "covid_community"
+    norovirus_cluster = "norovirus_cluster"
+    other = "other"
+
+
+class CDCRiskLevel(str, Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+    extreme = "extreme"
+
+
+class CDCTransmissionParams(BaseModel):
+    r0: Optional[float] = Field(default=None, description="Basic reproduction number")
+    incubation_days: Optional[float] = Field(
+        default=None, description="Incubation period in days"
+    )
+    infectious_days: Optional[float] = Field(
+        default=None, description="Infectious period in days"
+    )
+
+
+class CDCEventInput(BaseModel):
+    event_type: CDCEventType = Field(description="Public health event type")
+    location: str = Field(description="Administrative area or site")
+    population: int = Field(ge=1, description="Population size of affected area")
+    reported_cases: int = Field(ge=0, description="Reported cases at reporting time")
+    report_date: Optional[str] = Field(
+        default=None, description="Report date (YYYY-MM-DD) if available"
+    )
+    transmission: CDCTransmissionParams = Field(
+        default_factory=CDCTransmissionParams,
+        description="Transmission related parameters",
+    )
+
+
+class CDCResourceStockItem(BaseModel):
+    name: str = Field(description="Resource item name")
+    unit: str = Field(default="unit", description="Unit name")
+    quantity: float = Field(ge=0, description="Available quantity")
+
+
+class CDCResourceStock(BaseModel):
+    items: List[CDCResourceStockItem] = Field(default_factory=list)
+
+    def to_map(self) -> dict[str, float]:
+        return {i.name: i.quantity for i in self.items}
+
+
+class CDCGuidelineCitation(BaseModel):
+    source_file: str = Field(description="Guideline source file")
+    chunk_id: int = Field(description="Chunk id in the index")
+    score: float = Field(description="Relevance score")
+    excerpt: str = Field(description="Retrieved excerpt")
+
+
+class CDCMeasureLevel(str, Enum):
+    core = "core"
+    supplementary = "supplementary"
+
+
+class CDCMeasure(BaseModel):
+    title: str = Field(description="Measure title")
+    content: str = Field(description="Measure details")
+    level: CDCMeasureLevel = Field(
+        default=CDCMeasureLevel.core,
+        description="core: strong compliance; supplementary: adaptable",
+    )
+    citations: List[CDCGuidelineCitation] = Field(default_factory=list)
+
+    @classmethod
+    def _is_empty_citations(cls, citations: List[CDCGuidelineCitation]) -> bool:
+        return not citations or len(citations) == 0
+
+    @classmethod
+    def _is_core(cls, level: CDCMeasureLevel) -> bool:
+        return level == CDCMeasureLevel.core
+
+    @classmethod
+    def _normalize_level(cls, level: CDCMeasureLevel) -> str:
+        return level.value
+
+    @classmethod
+    def _normalize_title(cls, title: str) -> str:
+        return (title or "").strip()
+
+    @classmethod
+    def _normalize_content(cls, content: str) -> str:
+        return (content or "").strip()
+
+    @classmethod
+    def _ensure_nonempty_text(cls, text: str, field_name: str) -> str:
+        v = (text or "").strip()
+        if not v:
+            raise ValueError(f"{field_name} is required")
+        return v
+
+    @classmethod
+    def _validate_core_citations(
+        cls, level: CDCMeasureLevel, citations: List[CDCGuidelineCitation]
+    ) -> None:
+        if cls._is_core(level) and cls._is_empty_citations(citations):
+            raise ValueError("core measure must include at least 1 citation")
+
+    @classmethod
+    def _validate_text_fields(cls, title: str, content: str) -> tuple[str, str]:
+        return (
+            cls._ensure_nonempty_text(title, "title"),
+            cls._ensure_nonempty_text(content, "content"),
+        )
+
+    @classmethod
+    def _validate_level_value(cls, level: CDCMeasureLevel) -> CDCMeasureLevel:
+        normalized = cls._normalize_level(level)
+        if normalized not in {
+            CDCMeasureLevel.core.value,
+            CDCMeasureLevel.supplementary.value,
+        }:
+            raise ValueError("invalid measure level")
+        return level
+
+    @classmethod
+    def _validate_measure(
+        cls, title: str, content: str, level: CDCMeasureLevel, citations: List[Any]
+    ) -> None:
+        cls._validate_text_fields(title, content)
+        cls._validate_level_value(level)
+        cls._validate_core_citations(level, citations)
+
+    @classmethod
+    def _coerce_citations(
+        cls, citations: List[Union[CDCGuidelineCitation, dict]]
+    ) -> List[CDCGuidelineCitation]:
+        out: List[CDCGuidelineCitation] = []
+        for c in citations or []:
+            if isinstance(c, CDCGuidelineCitation):
+                out.append(c)
+            else:
+                out.append(CDCGuidelineCitation(**c))
+        return out
+
+    @classmethod
+    def _build(
+        cls,
+        title: str,
+        content: str,
+        level: CDCMeasureLevel,
+        citations: List[Union[CDCGuidelineCitation, dict]],
+    ) -> "CDCMeasure":
+        coerced_citations = cls._coerce_citations(citations)
+        cls._validate_measure(title, content, level, coerced_citations)
+        return cls(
+            title=cls._normalize_title(title),
+            content=cls._normalize_content(content),
+            level=level,
+            citations=coerced_citations,
+        )
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        title: str,
+        content: str,
+        level: CDCMeasureLevel = CDCMeasureLevel.core,
+        citations: Optional[List[Union[CDCGuidelineCitation, dict]]] = None,
+    ) -> "CDCMeasure":
+        return cls._build(title, content, level, citations or [])
+
+
+class CDCRiskAssessment(BaseModel):
+    level: CDCRiskLevel = Field(description="Risk level")
+    summary: str = Field(description="Risk assessment summary")
+    predicted_cases_7d: Optional[int] = Field(
+        default=None, ge=0, description="Predicted cases in next 7 days"
+    )
+
+
+class CDCPlanSection(BaseModel):
+    title: str = Field(description="Section title")
+    paragraphs: List[str] = Field(default_factory=list)
+    subsections: List["CDCPlanSection"] = Field(default_factory=list)
+
+
+class CDCPlanMeta(BaseModel):
+    title: str = Field(description="Plan title")
+    jurisdiction: Optional[str] = Field(default=None, description="Issuing unit")
+    created_at: Optional[str] = Field(default=None, description="Generated timestamp")
+
+
+class CDCPlanDocument(BaseModel):
+    meta: CDCPlanMeta
+    input: CDCEventInput
+    risk: CDCRiskAssessment
+    measures: List[CDCMeasure] = Field(default_factory=list)
+    resources: CDCResourceStock = Field(default_factory=CDCResourceStock)
+    sections: List[CDCPlanSection] = Field(default_factory=list)
+
+
+CDCPlanSection.model_rebuild()

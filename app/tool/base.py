@@ -98,7 +98,6 @@ class BaseTool(ABC, BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
-        underscore_attrs_are_private = False
 
     # def __init__(self, **data):
     #     """Initialize tool with model validation and schema registration."""
@@ -156,7 +155,7 @@ class BaseTool(ABC, BaseModel):
         if isinstance(data, str):
             text = data
         else:
-            text = json.dumps(data, indent=2)
+            text = json.dumps(data, indent=2, ensure_ascii=False)
         logger.debug(f"Created success response for {self.__class__.__name__}")
         return ToolResult(output=text)
 
