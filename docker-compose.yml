@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  openmanus-cdc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openmanus_cdc_app
+    # 端口映射：左边是电脑端口，右边是容器端口
+    ports:
+      - "8000:8000"
+    # 环境变量加载
+    env_file:
+      - .env
+    # 目录挂载：将本地代码实时映射到容器，修改本地文件容器立即生效
+    volumes:
+      - .:/app
+    # 保持容器运行
+    tty: true
+    stdin_open: true
+    restart: always

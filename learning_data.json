@@ -1,0 +1,82 @@
+{
+  "user_info": {
+    "name": "学习者",
+    "start_date": "2026-04-13",
+    "learning_style": "视觉型",
+    "goals": [
+      {
+        "id": 1,
+        "goal": "掌握Python基础",
+        "deadline": "2024-12-31",
+        "priority": "high",
+        "status": "pending",
+        "created_date": "2026-04-13"
+      },
+      {
+        "id": 2,
+        "goal": "完成机器学习入门课程",
+        "deadline": "2024-11-30",
+        "priority": "medium",
+        "status": "pending",
+        "created_date": "2026-04-13"
+      }
+    ]
+  },
+  "weekly_plans": {
+    "week_2024-10-21": {
+      "week_start": "2024-10-21",
+      "focus_area": "Python编程基础",
+      "tasks": [
+        {
+          "task": "学习Python函数",
+          "duration": 2,
+          "priority": "high"
+        },
+        {
+          "task": "完成编程练习",
+          "duration": 3,
+          "priority": "high"
+        },
+        {
+          "task": "复习上周内容",
+          "duration": 1,
+          "priority": "medium"
+        }
+      ],
+      "completed_tasks": 0,
+      "total_tasks": 3
+    }
+  },
+  "daily_records": {
+    "2026-04-13": [
+      {
+        "time": "13:57",
+        "duration_hours": 2.5,
+        "tasks_completed": [
+          "Python函数学习",
+          "完成练习1-3"
+        ],
+        "notes": "理解了函数参数和返回值"
+      }
+    ]
+  },
+  "progress_stats": {
+    "total_study_hours": 2.5,
+    "completed_tasks": 2,
+    "current_streak": 1,
+    "best_streak": 1
+  },
+  "learning_methods_tried": [],
+  "achievements": [
+    {
+      "achievement": "连续学习7天",
+      "date": "2026-04-13",
+      "type": "milestone"
+    },
+    {
+      "achievement": "完成第一个Python项目",
+      "date": "2026-04-13",
+      "type": "milestone"
+    }
+  ]
+}

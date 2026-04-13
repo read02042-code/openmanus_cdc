@@ -10,7 +10,7 @@ tiktoken~=0.9.0
 
 html2text~=2024.2.26
 gymnasium~=1.1.1
-pillow~=11.1.0
+pillow
 browsergym~=0.13.3
 uvicorn~=0.34.0
 unidiff~=0.7.5
@@ -36,7 +36,20 @@ boto3~=1.37.18
 
 requests~=2.32.3
 beautifulsoup4~=4.13.3
-crawl4ai~=0.6.3
+crawl4ai
 
 huggingface-hub~=0.29.2
 setuptools~=75.8.0
+
+fastapi
+uvicorn
+jinja2
+python-multipart
+pydantic
+faiss-cpu
+sentence-transformers
+numpy
+scipy
+python-docx
+daytona
+structlog

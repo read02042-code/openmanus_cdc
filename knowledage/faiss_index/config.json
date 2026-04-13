@@ -1,0 +1,6 @@
+{
+  "model_name": "BAAI/bge-small-zh-v1.5",
+  "chunk_size": 500,
+  "chunk_overlap": 100,
+  "metric": "cosine (IndexFlatIP + normalized embeddings)"
+}

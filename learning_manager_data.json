@@ -1,0 +1,14 @@
+{
+  "users": {
+    "user_1": {
+      "id": "user_1",
+      "username": "高效学习者",
+      "email": "learner@example.com",
+      "learning_style": "视觉型",
+      "registration_date": "2026-04-13",
+      "goals": [
+        {
+          "id": 1,
+          "description": "3个月内掌握Python编程",
+          "deadline": "2024-12-31",
+          "priority": 
