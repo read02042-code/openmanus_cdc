@@ -110,14 +110,24 @@ class CDCPlanExportTool(BaseTool):
         if not v:
             return "other"
         mapping = {
-            "学校流感": "influenza_school",
-            "流感": "influenza_school",
-            "社区新冠": "covid_community",
-            "新冠": "covid_community",
-            "诺如": "norovirus_cluster",
-            "诺如病毒": "norovirus_cluster",
-            "诺如病毒聚集": "norovirus_cluster",
+            "covid19": "covid19",
+            "covid-19": "covid19",
+            "covid": "covid19",
+            "社区新冠": "covid19",
+            "新冠": "covid19",
+            "新型冠状病毒": "covid19",
+            "influenza": "influenza",
+            "学校流感": "influenza",
+            "流感": "influenza",
+            "甲流": "influenza",
+            "norovirus": "norovirus",
+            "诺如": "norovirus",
+            "诺如病毒": "norovirus",
+            "诺如病毒聚集": "norovirus",
         }
+        v_lower = v.lower()
+        if v_lower in mapping:
+            return mapping[v_lower]
         if v in mapping:
             return mapping[v]
         return v

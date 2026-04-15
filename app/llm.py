@@ -1,7 +1,10 @@
 import math
 from typing import Dict, List, Optional, Union
 
-import tiktoken
+try:
+    import tiktoken
+except Exception:
+    tiktoken = None
 from openai import (
     APIError,
     AsyncAzureOpenAI,
@@ -207,11 +210,20 @@ class LLM:
             )
 
             # Initialize tokenizer
-            try:
-                self.tokenizer = tiktoken.encoding_for_model(self.model)
-            except KeyError:
-                # If the model is not in tiktoken's presets, use cl100k_base as default
-                self.tokenizer = tiktoken.get_encoding("cl100k_base")
+            if tiktoken is None:
+                class _FallbackTokenizer:
+                    @staticmethod
+                    def encode(text: str):
+                        if not text:
+                            return []
+                        return text.split()
+
+                self.tokenizer = _FallbackTokenizer()
+            else:
+                try:
+                    self.tokenizer = tiktoken.encoding_for_model(self.model)
+                except KeyError:
+                    self.tokenizer = tiktoken.get_encoding("cl100k_base")
 
             if self.api_type == "azure":
                 self.client = AsyncAzureOpenAI(

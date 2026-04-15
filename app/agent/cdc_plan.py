@@ -22,7 +22,7 @@ class CDCPlanAgent(ToolCallAgent):
         "Schema skeleton (field names must match):\n"
         "{\n"
         '  "meta": {"title": "...", "jurisdiction": "...", "created_at": "YYYY-MM-DD"},\n'
-        '  "input": {"event_type": "influenza_school|covid_community|norovirus_cluster|other", "location": "...", "population": 1, "reported_cases": 0, "report_date": "YYYY-MM-DD", "transmission": {"r0": 1.5, "incubation_days": 2.0, "infectious_days": 4.0}},\n'
+        '  "input": {"event_type": "covid19|influenza|norovirus|other", "location": "...", "population": 1, "reported_cases": 0, "report_date": "YYYY-MM-DD", "transmission": {"r0": 1.5, "incubation_days": 2.0, "infectious_days": 4.0}},\n'
         '  "risk": {"level": "low|medium|high|extreme", "summary": "...", "predicted_cases_7d": 0},\n'
         '  "measures": [{"title": "...", "content": "...", "level": "core|supplementary", "citations": [{"source_file": "...", "chunk_id": 1, "score": 0.8, "excerpt": "..."}]}],\n'
         '  "resources": {"items": [{"name": "...", "unit": "unit", "quantity": 0}]},\n'

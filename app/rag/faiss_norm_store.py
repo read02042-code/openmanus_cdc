@@ -38,6 +38,14 @@ class GuidelineVectorStore:
         self.model_name = model_name
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        # Disable logging and progress bars during standard runs
+        import logging
+        import warnings
+
+        logging.getLogger("sentence_transformers").setLevel(logging.ERROR)
+        warnings.filterwarnings(
+            "ignore", category=UserWarning, module="sentence_transformers"
+        )
         self.model = SentenceTransformer(model_name)
         self.index = None
         self.records: List[ChunkRecord] = []
@@ -156,7 +164,9 @@ class GuidelineVectorStore:
     def search(self, query: str, top_k: int = 5) -> List[SearchResult]:
         if self.index is None:
             raise ValueError("Index is not loaded. Build or load index first.")
-        query_vec = self.model.encode([query], normalize_embeddings=True)
+        query_vec = self.model.encode(
+            [query], normalize_embeddings=True, show_progress_bar=False
+        )
         query_vec = np.array(query_vec, dtype=np.float32)
 
         top_k = min(top_k, len(self.records))

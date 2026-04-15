@@ -188,9 +188,9 @@ class Memory(BaseModel):
 
 
 class CDCEventType(str, Enum):
-    influenza_school = "influenza_school"
-    covid_community = "covid_community"
-    norovirus_cluster = "norovirus_cluster"
+    covid19 = "covid19"
+    influenza = "influenza"
+    norovirus = "norovirus"
     other = "other"
 
 

@@ -5,11 +5,12 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from app.config import config
+from app.schema import CDCEventType
 
 
 class CaseReport(BaseModel):
     report_date: str
-    event_type: str
+    event_type: CDCEventType
     location: str
     confirmed_cases: int = Field(ge=0)
     suspected_cases: int = Field(ge=0)
@@ -26,7 +27,7 @@ class CaseStore(BaseModel):
         reports = [
             CaseReport(
                 report_date="2026-04-10",
-                event_type="influenza_school",
+                event_type="influenza",
                 location="某中学",
                 confirmed_cases=12,
                 suspected_cases=5,
@@ -36,7 +37,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-11",
-                event_type="influenza_school",
+                event_type="influenza",
                 location="某中学",
                 confirmed_cases=20,
                 suspected_cases=8,
@@ -46,7 +47,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-12",
-                event_type="influenza_school",
+                event_type="influenza",
                 location="某中学",
                 confirmed_cases=25,
                 suspected_cases=10,
@@ -56,7 +57,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-10",
-                event_type="influenza_school",
+                event_type="influenza",
                 location="某大学",
                 confirmed_cases=35,
                 suspected_cases=18,
@@ -66,7 +67,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-11",
-                event_type="influenza_school",
+                event_type="influenza",
                 location="某大学",
                 confirmed_cases=52,
                 suspected_cases=26,
@@ -76,7 +77,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-12",
-                event_type="influenza_school",
+                event_type="influenza",
                 location="某大学",
                 confirmed_cases=60,
                 suspected_cases=30,
@@ -86,7 +87,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-10",
-                event_type="covid_community",
+                event_type="covid19",
                 location="某社区",
                 confirmed_cases=8,
                 suspected_cases=6,
@@ -96,7 +97,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-11",
-                event_type="covid_community",
+                event_type="covid19",
                 location="某社区",
                 confirmed_cases=15,
                 suspected_cases=10,
@@ -106,7 +107,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-12",
-                event_type="covid_community",
+                event_type="covid19",
                 location="某社区",
                 confirmed_cases=22,
                 suspected_cases=14,
@@ -116,7 +117,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-10",
-                event_type="norovirus_cluster",
+                event_type="norovirus",
                 location="某乡镇",
                 confirmed_cases=0,
                 suspected_cases=18,
@@ -126,7 +127,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-11",
-                event_type="norovirus_cluster",
+                event_type="norovirus",
                 location="某乡镇",
                 confirmed_cases=2,
                 suspected_cases=30,
@@ -136,7 +137,7 @@ class CaseStore(BaseModel):
             ),
             CaseReport(
                 report_date="2026-04-12",
-                event_type="norovirus_cluster",
+                event_type="norovirus",
                 location="某乡镇",
                 confirmed_cases=6,
                 suspected_cases=38,
@@ -160,12 +161,28 @@ class CaseStore(BaseModel):
             store.save(p)
             return store
         data = json.loads(p.read_text(encoding="utf-8"))
+        reports = data.get("reports") if isinstance(data, dict) else None
+        if isinstance(reports, list):
+            for r in reports:
+                if not isinstance(r, dict):
+                    continue
+                et = str(r.get("event_type") or "").strip()
+                legacy = {
+                    "influenza_school": "influenza",
+                    "covid_community": "covid19",
+                    "norovirus_cluster": "norovirus",
+                }
+                if et in legacy:
+                    r["event_type"] = legacy[et]
         return cls(**data)
 
     def save(self, path: Optional[Path] = None) -> Path:
         p = path or self.default_path()
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps(self.model_dump(), ensure_ascii=False, indent=2), encoding="utf-8")
+        p.write_text(
+            json.dumps(self.model_dump(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
         return p
 
     @staticmethod

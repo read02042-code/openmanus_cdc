@@ -31,7 +31,7 @@ class CDCDataAPITool(BaseTool):
                 ],
                 "description": "Operation to execute",
             },
-            "event_type": {"type": "string", "description": "Event type filter"},
+            "event_type": {"type": "string", "description": "Disease type filter"},
             "location_contains": {
                 "type": "string",
                 "description": "Location substring filter",
@@ -129,6 +129,36 @@ class CDCDataAPITool(BaseTool):
         if self._cases and self._cases_path:
             self._cases.save(self._cases_path)
 
+    @staticmethod
+    def _normalize_event_type(raw: Any) -> str:
+        if raw is None:
+            return ""
+        v = str(raw).strip().lower()
+        if not v:
+            return ""
+        legacy = {
+            "influenza_school": "influenza",
+            "covid_community": "covid19",
+            "norovirus_cluster": "norovirus",
+        }
+        if v in legacy:
+            return legacy[v]
+        mapping = {
+            "新冠": "covid19",
+            "新型冠状病毒": "covid19",
+            "covid19": "covid19",
+            "covid-19": "covid19",
+            "covid": "covid19",
+            "流感": "influenza",
+            "甲流": "influenza",
+            "influenza": "influenza",
+            "诺如": "norovirus",
+            "诺如病毒": "norovirus",
+            "norovirus": "norovirus",
+            "other": "other",
+        }
+        return mapping.get(v, v)
+
     async def execute(self, **kwargs) -> ToolResult:
         command = str(kwargs.get("command") or "").strip()
         persist = bool(kwargs.get("persist", True))
@@ -160,7 +190,7 @@ class CDCDataAPITool(BaseTool):
 
         if command == "cases_query":
             rows = cases.query(
-                event_type=kwargs.get("event_type"),
+                event_type=self._normalize_event_type(kwargs.get("event_type")) or None,
                 location_contains=kwargs.get("location_contains"),
                 start_date=kwargs.get("start_date"),
                 end_date=kwargs.get("end_date"),
@@ -175,7 +205,7 @@ class CDCDataAPITool(BaseTool):
 
         if command == "cases_summary":
             summary = cases.summarize(
-                event_type=kwargs.get("event_type"),
+                event_type=self._normalize_event_type(kwargs.get("event_type")) or None,
                 location_contains=kwargs.get("location_contains"),
                 start_date=kwargs.get("start_date"),
                 end_date=kwargs.get("end_date"),
@@ -190,9 +220,12 @@ class CDCDataAPITool(BaseTool):
                 return ToolResult(
                     error="report_date, event_type and location are required for cases_append"
                 )
+            normalized_event_type = self._normalize_event_type(event_type)
+            if not normalized_event_type:
+                return ToolResult(error="invalid event_type for cases_append")
             report = CaseReport(
                 report_date=str(report_date),
-                event_type=str(event_type),
+                event_type=normalized_event_type,
                 location=str(location),
                 confirmed_cases=int(kwargs.get("confirmed_cases") or 0),
                 suspected_cases=int(kwargs.get("suspected_cases") or 0),
