@@ -155,9 +155,43 @@ class CDCDataAPITool(BaseTool):
             "诺如": "norovirus",
             "诺如病毒": "norovirus",
             "norovirus": "norovirus",
+            "麻疹": "measles_rubella",
+            "风疹": "measles_rubella",
+            "麻疹风疹": "measles_rubella",
+            "measles": "measles_rubella",
+            "rubella": "measles_rubella",
+            "百日咳": "pertussis",
+            "pertussis": "pertussis",
+            "结核": "tuberculosis",
+            "结核病": "tuberculosis",
+            "肺结核": "tuberculosis",
+            "tb": "tuberculosis",
+            "tuberculosis": "tuberculosis",
+            "登革热": "dengue",
+            "dengue": "dengue",
+            "手足口": "hand_foot_mouth",
+            "手足口病": "hand_foot_mouth",
+            "hfmd": "hand_foot_mouth",
+            "hand_foot_mouth": "hand_foot_mouth",
+            "水痘": "varicella",
+            "varicella": "varicella",
+            "腮腺炎": "mumps",
+            "流行性腮腺炎": "mumps",
+            "mumps": "mumps",
+            "甲肝": "hepatitis_a",
+            "甲型肝炎": "hepatitis_a",
+            "hepatitis a": "hepatitis_a",
+            "hepatitis_a": "hepatitis_a",
+            "食物中毒": "food_poisoning",
+            "food_poisoning": "food_poisoning",
             "other": "other",
         }
-        return mapping.get(v, v)
+        known = set(mapping.values())
+        if v in mapping:
+            return mapping[v]
+        if v in known:
+            return v
+        return "other"
 
     async def execute(self, **kwargs) -> ToolResult:
         command = str(kwargs.get("command") or "").strip()

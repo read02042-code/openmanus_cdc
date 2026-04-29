@@ -35,8 +35,8 @@ class PlanStepStatus(str, Enum):
     def get_status_marks(cls) -> Dict[str, str]:
         """Return a mapping of statuses to their marker symbols"""
         return {
-            cls.COMPLETED.value: "[✓]",
-            cls.IN_PROGRESS.value: "[→]",
+            cls.COMPLETED.value: "[√]",
+            cls.IN_PROGRESS.value: "[>]",
             cls.BLOCKED.value: "[!]",
             cls.NOT_STARTED.value: "[ ]",
         }

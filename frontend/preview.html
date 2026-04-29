@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>预案导览 - 疾控中心应急预案生成系统</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <div class="layout" data-page="preview">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>疾控中心应急预案生成系统</h1>
+          <p>草稿预览 · 人工确认 · 一键导出</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="./index.html">预案生成</a>
+        <a class="active" href="./preview.html">预案导览<span class="tag">草稿</span></a>
+        <a href="./runs.html">运行记录</a>
+        <a href="./help.html">使用帮助</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div>
+          <div class="title">预案导览（草稿）</div>
+          <div class="subtitle">plan_id：<span id="previewPlanId" class="muted">-</span>。系统已生成“优化后的草稿预案”，请审阅后决定导出或人工修订。
+          </div>
+        </div>
+        <div class="badge">疾控业务 · 中文导览</div>
+      </div>
+
+      <div class="grid">
+        <section class="card span-5">
+          <h2>后端连接</h2>
+          <div class="field">
+            <label for="apiBase">API Base URL</label>
+            <input id="apiBase" placeholder="例如 http://localhost:8000" />
+            <div class="inline-help">若页面无法更新状态，请检查此地址与端口映射。</div>
+          </div>
+          <div class="field">
+            <label>草稿摘要</label>
+            <div id="draftMeta" class="muted">-</div>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <button id="btnReload" class="secondary">刷新状态</button>
+            <a class="muted" href="./index.html">返回生成</a>
+          </div>
+          <div id="statusErr" class="error" style="margin-top:10px;"></div>
+        </section>
+
+        <section class="card span-7">
+          <h2>运行状态</h2>
+          <div class="kv">
+            <div>状态</div>
+            <div><span id="status" class="badge">-</span></div>
+            <div>导出路径</div>
+            <div><span id="output_path" class="muted">-</span></div>
+            <div>下载</div>
+            <div><a id="download" href="#" target="_blank" style="display:none;">下载文件</a></div>
+          </div>
+          <div class="hint">当状态为“等待审核”时，可以在下方选择“导出”或“编辑后导出”。</div>
+        </section>
+
+        <section class="card span-12">
+          <h2>流程面板（PlanningFlow）</h2>
+          <div id="plan_text" class="pre"></div>
+        </section>
+
+        <section class="card span-12" id="reviewCard" style="display:none;">
+          <h2>审核与导出</h2>
+          <p>你可以直接认可草稿导出，或编辑 JSON 后导出。取消会终止本次任务。</p>
+          <div id="draftHint" class="muted" style="margin-bottom:8px;"></div>
+          <div class="row">
+            <button id="btnApprove">认可草稿并导出</button>
+            <button id="btnEditExport" class="secondary">提交修改并导出</button>
+            <button id="btnCancel" class="danger">取消任务</button>
+          </div>
+          <div class="field">
+            <label>草稿 JSON（可选编辑）</label>
+            <textarea id="draftJson" placeholder="草稿 JSON 会自动加载，你也可以直接修改。"></textarea>
+            <div id="reviewErr" class="error" style="margin-top:8px;"></div>
+          </div>
+        </section>
+
+        <section class="card span-12">
+          <h2>草稿预览（排版）</h2>
+          <p>按预案阅读习惯排版展示：标题、事件概况、风险评估、防控措施、资源保障、规范引用。</p>
+          <div id="draftDoc" class="doc"></div>
+          <div class="row" style="margin-top:10px;">
+            <button id="btnToggleRaw" class="secondary">显示/隐藏 JSON 原文</button>
+          </div>
+          <div id="draftRaw" class="pre" style="display:none;margin-top:10px;"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="./app.js"></script>
+</body>
+
+</html>

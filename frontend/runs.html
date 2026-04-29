@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>运行记录 - 疾控中心应急预案生成系统</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="layout" data-page="runs">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="logo"></div>
+          <div>
+            <h1>疾控中心应急预案生成系统</h1>
+            <p>OpenManus 架构 · 流程可视化 · 合规可追溯</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="./index.html">预案生成</a>
+          <a href="./preview.html">预案导览</a>
+          <a class="active" href="./runs.html">运行记录<span class="tag">列表</span></a>
+          <a href="./help.html">使用帮助</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <div class="topbar">
+          <div>
+            <div class="title">运行记录</div>
+            <div class="subtitle">查看最近任务、快速定位 plan_id、下载导出文件、排查失败原因。</div>
+          </div>
+          <div class="badge">面向疾控业务的可追溯链路</div>
+        </div>
+
+        <div class="grid">
+          <section class="card span-5">
+            <h2>后端连接</h2>
+            <div class="field">
+              <label for="apiBase">API Base URL</label>
+              <input id="apiBase" placeholder="例如 http://localhost:8000" />
+              <div class="inline-help">与“预案生成”页面一致，会自动记忆。</div>
+            </div>
+            <div class="row" style="margin-top:10px;">
+              <button id="btnRefreshRuns">刷新列表</button>
+              <button id="btnClearView" class="secondary">清空视图</button>
+            </div>
+            <div id="runsErr" class="error" style="margin-top:10px;"></div>
+          </section>
+
+          <section class="card span-7">
+            <h2>快速定位</h2>
+            <div class="field">
+              <label for="pidInput">输入 plan_id 直接查看状态</label>
+              <input id="pidInput" placeholder="例如 cdc_web_... 或 cdc_plan_..." />
+              <div class="inline-help">可用于从日志复制 plan_id 后快速查看 PlanningFlow 面板。</div>
+            </div>
+            <div class="row" style="margin-top:10px;">
+              <button id="btnOpenPid" class="secondary">查询状态</button>
+              <a class="muted" href="./index.html">返回生成页面</a>
+            </div>
+          </section>
+
+          <section class="card span-12">
+            <h2>任务列表</h2>
+            <div class="hint">提示：列表只包含当前后端进程内的运行记录（重启后会清空）。</div>
+            <div style="margin-top:10px;overflow:auto;">
+              <table class="table" id="runsTable">
+                <thead>
+                  <tr>
+                    <th>plan_id</th>
+                    <th>状态</th>
+                    <th>导出</th>
+                    <th>错误</th>
+                  </tr>
+                </thead>
+                <tbody id="runsBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="card span-12">
+            <h2>PlanningFlow 面板</h2>
+            <div id="onePlanMeta" class="muted" style="margin-bottom:8px;"></div>
+            <div id="onePlanText" class="pre"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <script src="./app.js"></script>
+  </body>
+</html>

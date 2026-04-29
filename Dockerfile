@@ -10,6 +10,7 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debia
     git \
     curl \
     build-essential \
+    fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir uv -i https://pypi.tuna.tsinghua.edu.cn/simple
 

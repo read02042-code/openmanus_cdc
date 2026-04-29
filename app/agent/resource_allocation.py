@@ -58,8 +58,42 @@ def _normalize_disease_type(disease_type: str) -> str:
         "诺如病毒": "norovirus",
         "胃肠炎": "norovirus",
         "norovirus": "norovirus",
+        "麻疹": "measles_rubella",
+        "风疹": "measles_rubella",
+        "麻疹风疹": "measles_rubella",
+        "measles": "measles_rubella",
+        "rubella": "measles_rubella",
+        "百日咳": "pertussis",
+        "pertussis": "pertussis",
+        "结核": "tuberculosis",
+        "结核病": "tuberculosis",
+        "肺结核": "tuberculosis",
+        "tb": "tuberculosis",
+        "tuberculosis": "tuberculosis",
+        "登革热": "dengue",
+        "dengue": "dengue",
+        "手足口": "hand_foot_mouth",
+        "手足口病": "hand_foot_mouth",
+        "hfmd": "hand_foot_mouth",
+        "hand_foot_mouth": "hand_foot_mouth",
+        "水痘": "varicella",
+        "varicella": "varicella",
+        "腮腺炎": "mumps",
+        "流行性腮腺炎": "mumps",
+        "mumps": "mumps",
+        "甲肝": "hepatitis_a",
+        "甲型肝炎": "hepatitis_a",
+        "hepatitis a": "hepatitis_a",
+        "hepatitis_a": "hepatitis_a",
+        "食物中毒": "food_poisoning",
+        "food_poisoning": "food_poisoning",
     }
-    return mapping.get(v, v)
+    known = set(mapping.values())
+    if v in mapping:
+        return mapping[v]
+    if v in known:
+        return v
+    return "other"
 
 
 def _disease_bundle_rules(disease_type: str) -> dict[str, Any]:
@@ -68,6 +102,8 @@ def _disease_bundle_rules(disease_type: str) -> dict[str, Any]:
         "core_skus": [
             "mask_surgical",
             "mask_n95",
+            "goggles",
+            "face_shield",
             "gloves",
             "protective_suit",
             "isolation_gown",
@@ -102,6 +138,111 @@ def _disease_bundle_rules(disease_type: str) -> dict[str, Any]:
             **base,
             "focus": "诺如：呕吐物与环境消毒，处置与消毒耗材为主。",
             "add_skus": ["chlorine_tablet", "sprayer", "shoe_cover"],
+        },
+        "measles_rubella": {
+            **base,
+            "focus": "麻疹/风疹：空气/飞沫传播风险高，强调高等级防护、快速排查、样本采集与免疫补种。",
+            "add_skus": [
+                "mask_n95",
+                "goggles",
+                "face_shield",
+                "sample_swab",
+                "vtm_tube",
+                "sample_bag",
+                "transport_box",
+                "cooler_box",
+                "ice_pack",
+                "mmr_vaccine",
+            ],
+        },
+        "pertussis": {
+            **base,
+            "focus": "百日咳：学校/托幼易聚集，强调病例监测、密接管理、实验室检测与宣教。",
+            "add_skus": [
+                "sample_swab",
+                "vtm_tube",
+                "pcr_reagent",
+                "sample_bag",
+                "transport_box",
+                "thermometer",
+                "warning_sign",
+            ],
+        },
+        "tuberculosis": {
+            **base,
+            "focus": "结核病：持续传播风险与暴露时长相关，强调呼吸防护、筛查随访与标本采集转运。",
+            "add_skus": [
+                "mask_n95",
+                "sputum_container",
+                "biohazard_bag",
+                "transport_box",
+                "disinfectant",
+            ],
+        },
+        "dengue": {
+            **base,
+            "focus": "登革热：媒介传播为主，强调防蚊灭蚊、孳生地清理与人群防护。",
+            "add_skus": [
+                "mosquito_net",
+                "mosquito_repellent",
+                "larvicide",
+                "insecticide",
+                "sprayer",
+                "warning_sign",
+                "megaphone",
+            ],
+        },
+        "hand_foot_mouth": {
+            **base,
+            "focus": "手足口病：托幼/学校聚集传播，强调手卫生、环境清洁消毒与晨午检。",
+            "add_skus": [
+                "soap",
+                "paper_towel",
+                "chlorine_tablet",
+                "sprayer",
+                "thermometer",
+            ],
+        },
+        "varicella": {
+            **base,
+            "focus": "水痘：空气传播风险较高，强调隔离观察、通风消毒与免疫补种。",
+            "add_skus": [
+                "mask_n95",
+                "goggles",
+                "face_shield",
+                "varicella_vaccine",
+                "cooler_box",
+                "ice_pack",
+            ],
+        },
+        "mumps": {
+            **base,
+            "focus": "流行性腮腺炎：学校人群易传播，强调病例隔离、健康宣教与免疫补种。",
+            "add_skus": [
+                "mmr_vaccine",
+                "cooler_box",
+                "ice_pack",
+                "thermometer",
+                "warning_sign",
+            ],
+        },
+        "hepatitis_a": {
+            **base,
+            "focus": "甲型肝炎：经粪口传播，强调饮用水/食品卫生、手卫生与免疫补种。",
+            "add_skus": [
+                "soap",
+                "paper_towel",
+                "chlorine_tablet",
+                "sprayer",
+                "hepatitis_a_vaccine",
+                "cooler_box",
+                "ice_pack",
+            ],
+        },
+        "food_poisoning": {
+            **base,
+            "focus": "食物中毒：现场封存与环境消毒、样本采集与转运，消毒与处置耗材为主。",
+            "add_skus": ["chlorine_tablet", "sprayer", "biohazard_bag", "sharps_box"],
         },
         "other": base,
     }
@@ -165,6 +306,26 @@ class ResourceAllocationAgent(BaseAgent):
             }
             for i in _safe_list(materials_payload.get("items"))
         ]
+        sku_unit_map = {
+            str(i.get("sku") or "").strip(): str(i.get("unit") or "").strip()
+            for i in catalog
+            if isinstance(i, dict) and str(i.get("sku") or "").strip()
+        }
+        name_unit_map = {
+            str(i.get("name") or "").strip(): str(i.get("unit") or "").strip()
+            for i in catalog
+            if isinstance(i, dict) and str(i.get("name") or "").strip()
+        }
+        warehouses = [
+            w
+            for w in _safe_list(materials_payload.get("warehouses"))
+            if isinstance(w, dict)
+        ]
+        wh_name_map = {
+            str(w.get("warehouse_id") or "").strip(): str(w.get("name") or "").strip()
+            for w in warehouses
+            if str(w.get("warehouse_id") or "").strip()
+        }
 
         bundle = _disease_bundle_rules(disease_type)
 
@@ -241,6 +402,24 @@ class ResourceAllocationAgent(BaseAgent):
                 )
 
         demands = [d for d in _safe_list(plan.get("demands")) if isinstance(d, dict)]
+        for d in demands:
+            sku = str(d.get("sku") or "").strip()
+            unit = str(d.get("unit") or "").strip()
+            if sku and (not unit or unit == "unit"):
+                u = sku_unit_map.get(sku)
+                if u:
+                    d["unit"] = u
+                    unit = u
+            if (not unit or unit == "unit") and d.get("name"):
+                nm = str(d.get("name") or "").strip()
+                u2 = name_unit_map.get(nm)
+                if not u2:
+                    for k, v in name_unit_map.items():
+                        if nm and k and (nm in k or k in nm):
+                            u2 = v
+                            break
+                if u2:
+                    d["unit"] = u2
         demands = demands[:12]
 
         allocations: List[Dict[str, Any]] = []
@@ -251,6 +430,7 @@ class ResourceAllocationAgent(BaseAgent):
             qty = _safe_float(d.get("quantity"), 0.0)
             if qty <= 0:
                 continue
+            unit = str(d.get("unit") or "").strip() or "unit"
             alloc = await data_api.execute(
                 command="materials_allocate",
                 sku=sku if sku else None,
@@ -259,13 +439,30 @@ class ResourceAllocationAgent(BaseAgent):
             )
             payload = json.loads(alloc.output) if alloc.output else {}
             allocated_qty = _safe_float(payload.get("allocated_quantity"), 0.0)
+            allocs = payload.get("allocations") or []
+            if isinstance(allocs, list):
+                normalized_allocs = []
+                for a in allocs:
+                    if not isinstance(a, dict):
+                        continue
+                    wid = str(a.get("warehouse_id") or "").strip()
+                    normalized_allocs.append(
+                        {
+                            "warehouse_id": wid,
+                            "warehouse_name": wh_name_map.get(wid) or wid,
+                            "sku": a.get("sku") or payload.get("sku") or sku,
+                            "quantity": _safe_float(a.get("quantity"), 0.0),
+                        }
+                    )
+                allocs = normalized_allocs
             allocations.append(
                 {
                     "sku": payload.get("sku") or sku,
                     "name": payload.get("name") or name,
+                    "unit": unit,
                     "requested_quantity": qty,
                     "allocated_quantity": allocated_qty,
-                    "allocations": payload.get("allocations") or [],
+                    "allocations": allocs,
                     "reason": d.get("reason") or "",
                 }
             )
@@ -274,6 +471,7 @@ class ResourceAllocationAgent(BaseAgent):
                     {
                         "sku": payload.get("sku") or sku,
                         "name": payload.get("name") or name,
+                        "unit": unit,
                         "shortage": float(qty - allocated_qty),
                     }
                 )

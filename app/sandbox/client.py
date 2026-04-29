@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Protocol
+from typing import TYPE_CHECKING, Dict, Optional, Protocol
 
 from app.config import SandboxSettings
-from app.sandbox.core.sandbox import DockerSandbox
+
+if TYPE_CHECKING:
+    from app.sandbox.core.sandbox import DockerSandbox
 
 
 class SandboxFileOperations(Protocol):
@@ -88,7 +90,7 @@ class LocalSandboxClient(BaseSandboxClient):
 
     def __init__(self):
         """Initializes local sandbox client."""
-        self.sandbox: Optional[DockerSandbox] = None
+        self.sandbox: Optional["DockerSandbox"] = None
 
     async def create(
         self,
@@ -104,6 +106,13 @@ class LocalSandboxClient(BaseSandboxClient):
         Raises:
             RuntimeError: If sandbox creation fails.
         """
+        try:
+            from app.sandbox.core.sandbox import DockerSandbox
+        except Exception as e:
+            raise RuntimeError(
+                "Sandbox dependencies are not available. "
+                "Install 'docker' python package and ensure Docker engine is running."
+            ) from e
         self.sandbox = DockerSandbox(config, volume_bindings)
         await self.sandbox.create()
 

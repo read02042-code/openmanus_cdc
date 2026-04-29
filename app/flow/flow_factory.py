@@ -3,11 +3,13 @@ from typing import Dict, List, Union
 
 from app.agent.base import BaseAgent
 from app.flow.base import BaseFlow
+from app.flow.cdc_plan_flow import CDCPlanFlow
 from app.flow.planning import PlanningFlow
 
 
 class FlowType(str, Enum):
     PLANNING = "planning"
+    CDC_PLAN = "cdc_plan"
 
 
 class FlowFactory:
@@ -21,6 +23,7 @@ class FlowFactory:
     ) -> BaseFlow:
         flows = {
             FlowType.PLANNING: PlanningFlow,
+            FlowType.CDC_PLAN: CDCPlanFlow,
         }
 
         flow_class = flows.get(flow_type)

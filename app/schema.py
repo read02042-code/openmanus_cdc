@@ -191,6 +191,15 @@ class CDCEventType(str, Enum):
     covid19 = "covid19"
     influenza = "influenza"
     norovirus = "norovirus"
+    measles_rubella = "measles_rubella"
+    pertussis = "pertussis"
+    tuberculosis = "tuberculosis"
+    dengue = "dengue"
+    hand_foot_mouth = "hand_foot_mouth"
+    varicella = "varicella"
+    mumps = "mumps"
+    hepatitis_a = "hepatitis_a"
+    food_poisoning = "food_poisoning"
     other = "other"
 
 
@@ -218,6 +227,10 @@ class CDCEventInput(BaseModel):
     reported_cases: int = Field(ge=0, description="Reported cases at reporting time")
     report_date: Optional[str] = Field(
         default=None, description="Report date (YYYY-MM-DD) if available"
+    )
+    region_profile: Optional[str] = Field(
+        default=None,
+        description="Optional local context for regional (supplementary) measures",
     )
     transmission: CDCTransmissionParams = Field(
         default_factory=CDCTransmissionParams,

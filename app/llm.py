@@ -21,7 +21,6 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from app.bedrock import BedrockClient
 from app.config import LLMSettings, config
 from app.exceptions import TokenLimitExceeded
 from app.logger import logger  # Assuming a logger is set up in your app
@@ -32,7 +31,6 @@ from app.schema import (
     Message,
     ToolChoice,
 )
-
 
 REASONING_MODELS = ["o1", "o3-mini"]
 MULTIMODAL_MODELS = [
@@ -211,6 +209,7 @@ class LLM:
 
             # Initialize tokenizer
             if tiktoken is None:
+
                 class _FallbackTokenizer:
                     @staticmethod
                     def encode(text: str):
@@ -232,6 +231,8 @@ class LLM:
                     api_version=self.api_version,
                 )
             elif self.api_type == "aws":
+                from app.bedrock import BedrockClient
+
                 self.client = BedrockClient()
             else:
                 self.client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
@@ -549,9 +550,7 @@ class LLM:
             multimodal_content = (
                 [{"type": "text", "text": content}]
                 if isinstance(content, str)
-                else content
-                if isinstance(content, list)
-                else []
+                else content if isinstance(content, list) else []
             )
 
             # Add images to content

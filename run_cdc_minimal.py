@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import builtins
 import json
 import re
 from datetime import date
@@ -149,6 +150,13 @@ async def main():
     parser = argparse.ArgumentParser(
         description="Run CDC end-to-end plan generation: risk -> measures -> resources -> validation -> export"
     )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        required=False,
+        default="flow",
+        choices=["script", "flow", "mock_flow"],
+    )
     parser.add_argument("--disease_type", type=str, required=False, default="covid19")
     parser.add_argument("--location", type=str, required=False, default="某中学")
     parser.add_argument("--population", type=int, required=False, default=3000)
@@ -175,12 +183,247 @@ async def main():
     data_tool = CDCDataAPITool()
     await data_tool.execute(command="reset_demo_data")
 
-    risk_agent = RiskAssessmentAgent()
     risk_prompt = (
         f"disease_type: {disease_type}；location: {location}；population: {population}；"
         f"reported_cases: {reported_cases}；underreport_factor: {underreport_factor}；days: {days}；"
         "请输出风险等级与预测，并说明E/I/R如何确定。"
     )
+
+    if args.mode == "mock_flow":
+        from pydantic import Field
+
+        import app.flow.cdc_plan_flow as flow_mod
+        from app.agent.base import BaseAgent
+        from app.schema import AgentState
+        from app.tool.base import ToolResult
+
+        builtins.input = lambda prompt="": ""
+
+        class _FakeExportTool:
+            async def execute(self, plan, output_path):
+                return ToolResult(output=f"MOCK_EXPORT_OK: {output_path}", error=None)
+
+        flow_mod.CDCPlanExportTool = _FakeExportTool
+
+        class _MockBaseAgent(BaseAgent):
+            max_steps: int = 1
+
+            async def run(self, request: Optional[str] = None) -> str:
+                if request:
+                    self.update_memory("user", request)
+                step_result = await self.step()
+                return f"Step 1: {step_result}"
+
+        class _MockRiskAgent(_MockBaseAgent):
+            name: str = "MockRisk"
+            description: str = "Mock risk agent for flow testing"
+
+            async def step(self) -> str:
+                self.state = AgentState.FINISHED
+                return json.dumps(
+                    {
+                        "input": {
+                            "disease_type": disease_type,
+                            "location": location,
+                            "population": population,
+                            "reported_cases": reported_cases,
+                            "days": days,
+                            "r0": 2.0,
+                            "incubation_days": 3.0,
+                            "infectious_days": 5.0,
+                        },
+                        "assessment": {
+                            "risk_level": "high",
+                            "summary": "模拟测试：风险较高。",
+                            "predicted_cases_7d": 120,
+                            "thinking_summary": [
+                                "已解析输入字段",
+                                "完成风险分级与预测输出",
+                                "为后续措施与资源节点提供依据",
+                            ],
+                        },
+                    },
+                    ensure_ascii=False,
+                )
+
+        class _MockMeasuresAgent(_MockBaseAgent):
+            name: str = "MockMeasures"
+            description: str = "Mock measures agent for flow testing"
+
+            async def step(self) -> str:
+                self.state = AgentState.FINISHED
+                return json.dumps(
+                    {
+                        "output": {
+                            "measures": [
+                                {
+                                    "level": "core",
+                                    "title": "佩戴口罩",
+                                    "content": "在密闭/人员密集场所按要求佩戴。",
+                                    "citations": [
+                                        {
+                                            "source_file": "mock_norm.txt",
+                                            "chunk_id": 1,
+                                            "score": 0.91,
+                                            "excerpt": "示例：呼吸道传染病场景需加强个人防护。",
+                                        }
+                                    ],
+                                },
+                                {
+                                    "level": "core",
+                                    "title": "通风与环境消毒",
+                                    "content": "加强通风，重点区域定期消毒。",
+                                    "citations": [
+                                        {
+                                            "source_file": "mock_norm.txt",
+                                            "chunk_id": 2,
+                                            "score": 0.89,
+                                            "excerpt": "示例：环境清洁消毒与通风可降低传播风险。",
+                                        }
+                                    ],
+                                },
+                                {
+                                    "level": "core",
+                                    "title": "晨午检与缺课追踪",
+                                    "content": "开展晨午检，异常及时报告并追踪缺课。",
+                                    "citations": [
+                                        {
+                                            "source_file": "mock_norm.txt",
+                                            "chunk_id": 3,
+                                            "score": 0.88,
+                                            "excerpt": "示例：学校场所需落实晨午检与缺课追踪。",
+                                        }
+                                    ],
+                                },
+                            ],
+                            "thinking_summary": [
+                                "依据风险等级选择核心措施优先级",
+                                "每条核心措施绑定引用以满足合规校验",
+                                "覆盖个人防护、环境消毒与监测闭环",
+                            ],
+                        }
+                    },
+                    ensure_ascii=False,
+                )
+
+        class _MockResourcesAgent(_MockBaseAgent):
+            name: str = "MockResources"
+            description: str = "Mock resources agent for flow testing"
+
+            async def step(self) -> str:
+                self.state = AgentState.FINISHED
+                return json.dumps(
+                    {
+                        "demands": [
+                            {"name": "一次性医用口罩", "quantity": 500},
+                            {"name": "免洗手消毒液", "quantity": 50},
+                        ],
+                        "output": {
+                            "demands_thinking_summary": [
+                                "按 7 天与病例规模估算消耗",
+                                "优先保障防护与消毒品类",
+                                "预留机动量应对风险升级",
+                            ],
+                            "thinking_summary": [
+                                "已生成需求清单（模拟）",
+                                "可用于后续导出与保障章节",
+                                "缺口可在真实环境对接库存计算",
+                            ],
+                        },
+                    },
+                    ensure_ascii=False,
+                )
+
+        class _MockValidationAgent(_MockBaseAgent):
+            name: str = "MockValidation"
+            description: str = "Mock validation agent for flow branch testing"
+            call_count: int = Field(default=0)
+
+            async def step(self) -> str:
+                self.state = AgentState.FINISHED
+                self.call_count += 1
+                user_text = ""
+                for msg in reversed(self.memory.messages):
+                    if msg.role == "user" and msg.content:
+                        user_text = msg.content
+                        break
+                plan = (json.loads(user_text) or {}).get("plan") or {}
+                if self.call_count == 1:
+                    return json.dumps(
+                        {
+                            "agent": "PlanValidation",
+                            "valid": False,
+                            "output": {
+                                "thinking_summary": [
+                                    "发现不合规点（模拟）",
+                                    "引导进入人工修改分支以验证流程",
+                                    "修改后需要重新校验",
+                                ],
+                                "improved_plan": plan,
+                                "improved_plan_validation_errors": [
+                                    {"msg": "mock: force manual_fix branch"}
+                                ],
+                                "improved_plan_rule_issues": [],
+                            },
+                        },
+                        ensure_ascii=False,
+                    )
+                return json.dumps(
+                    {
+                        "agent": "PlanValidation",
+                        "valid": True,
+                        "output": {
+                            "thinking_summary": [
+                                "复核通过（模拟）",
+                                "校验错误与规则问题均为空",
+                                "进入导出节点",
+                            ],
+                            "improved_plan": plan,
+                            "improved_plan_validation_errors": [],
+                            "improved_plan_rule_issues": [],
+                        },
+                    },
+                    ensure_ascii=False,
+                )
+
+        flow = flow_mod.CDCPlanFlow(
+            agents={
+                "risk": _MockRiskAgent(),
+                "measures": _MockMeasuresAgent(),
+                "resources": _MockResourcesAgent(),
+                "validation": _MockValidationAgent(),
+            },
+            output_docx=str(args.output_docx),
+            manual_fix_path="manual_fix_plan_mock.json",
+            step_max_retries=0,
+            max_rollbacks=0,
+        )
+        out = await flow.execute(risk_prompt)
+        print(out)
+        return
+
+    if args.mode == "flow":
+        from app.flow.flow_factory import FlowFactory, FlowType
+
+        risk_agent = RiskAssessmentAgent()
+        measures_agent = ControlMeasuresAgent()
+        resources_agent = ResourceAllocationAgent()
+        validation_agent = PlanValidationAgent()
+        flow = FlowFactory.create_flow(
+            flow_type=FlowType.CDC_PLAN,
+            agents={
+                "risk": risk_agent,
+                "measures": measures_agent,
+                "resources": resources_agent,
+                "validation": validation_agent,
+            },
+            output_docx=str(args.output_docx),
+        )
+        out = await flow.execute(risk_prompt)
+        logger.info(out)
+        return
+
+    risk_agent = RiskAssessmentAgent()
     risk_text = await risk_agent.run(risk_prompt)
     risk_step = _extract_step_json(risk_text, 1)
     risk_level = (

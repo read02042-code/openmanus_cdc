@@ -134,8 +134,42 @@ def _normalize_disease_type(disease_type: str) -> str:
         "诺如病毒": "norovirus",
         "胃肠炎": "norovirus",
         "norovirus": "norovirus",
+        "麻疹": "measles_rubella",
+        "风疹": "measles_rubella",
+        "麻疹风疹": "measles_rubella",
+        "measles": "measles_rubella",
+        "rubella": "measles_rubella",
+        "百日咳": "pertussis",
+        "pertussis": "pertussis",
+        "结核": "tuberculosis",
+        "结核病": "tuberculosis",
+        "肺结核": "tuberculosis",
+        "tb": "tuberculosis",
+        "tuberculosis": "tuberculosis",
+        "登革热": "dengue",
+        "dengue": "dengue",
+        "手足口": "hand_foot_mouth",
+        "手足口病": "hand_foot_mouth",
+        "hfmd": "hand_foot_mouth",
+        "hand_foot_mouth": "hand_foot_mouth",
+        "水痘": "varicella",
+        "varicella": "varicella",
+        "腮腺炎": "mumps",
+        "流行性腮腺炎": "mumps",
+        "mumps": "mumps",
+        "甲肝": "hepatitis_a",
+        "甲型肝炎": "hepatitis_a",
+        "hepatitis a": "hepatitis_a",
+        "hepatitis_a": "hepatitis_a",
+        "食物中毒": "food_poisoning",
+        "food_poisoning": "food_poisoning",
     }
-    return mapping.get(v, v)
+    known = set(mapping.values())
+    if v in mapping:
+        return mapping[v]
+    if v in known:
+        return v
+    return "other"
 
 
 def _disease_default_params(disease_type: str) -> dict[str, float]:
@@ -159,6 +193,60 @@ def _disease_default_params(disease_type: str) -> dict[str, float]:
             "infectious_days": 3.0,
             "underreport_factor": 1.2,
         },
+        "measles_rubella": {
+            "r0": 10.0,
+            "incubation_days": 10.0,
+            "infectious_days": 7.0,
+            "underreport_factor": 1.2,
+        },
+        "pertussis": {
+            "r0": 5.0,
+            "incubation_days": 7.0,
+            "infectious_days": 14.0,
+            "underreport_factor": 1.2,
+        },
+        "tuberculosis": {
+            "r0": 1.2,
+            "incubation_days": 21.0,
+            "infectious_days": 30.0,
+            "underreport_factor": 1.1,
+        },
+        "dengue": {
+            "r0": 2.3,
+            "incubation_days": 6.0,
+            "infectious_days": 5.0,
+            "underreport_factor": 1.2,
+        },
+        "hand_foot_mouth": {
+            "r0": 2.0,
+            "incubation_days": 4.0,
+            "infectious_days": 7.0,
+            "underreport_factor": 1.2,
+        },
+        "varicella": {
+            "r0": 6.0,
+            "incubation_days": 14.0,
+            "infectious_days": 7.0,
+            "underreport_factor": 1.2,
+        },
+        "mumps": {
+            "r0": 4.0,
+            "incubation_days": 16.0,
+            "infectious_days": 7.0,
+            "underreport_factor": 1.2,
+        },
+        "hepatitis_a": {
+            "r0": 1.4,
+            "incubation_days": 28.0,
+            "infectious_days": 10.0,
+            "underreport_factor": 1.1,
+        },
+        "food_poisoning": {
+            "r0": 1.1,
+            "incubation_days": 0.8,
+            "infectious_days": 1.5,
+            "underreport_factor": 1.1,
+        },
         "other": {
             "r0": 1.6,
             "incubation_days": 2.0,
@@ -175,6 +263,53 @@ def _estimate_exposed(i0: int, incubation_days: float, infectious_days: float) -
     infectious_days = max(0.5, float(infectious_days))
     ratio = incubation_days / infectious_days
     return max(1, int(round(max(1.0, i0 * 2.0) * ratio)))
+
+
+def _summary_fallback(
+    *,
+    disease_type: str,
+    location: str,
+    risk_level: str,
+    predicted_cases_7d: int,
+    growth_factor: float,
+) -> str:
+    dt = _normalize_disease_type(disease_type)
+    dname = {
+        "influenza": "流感",
+        "covid19": "新冠",
+        "norovirus": "诺如病毒",
+        "measles_rubella": "麻疹/风疹",
+        "pertussis": "百日咳",
+        "tuberculosis": "结核病",
+        "dengue": "登革热",
+        "hand_foot_mouth": "手足口病",
+        "varicella": "水痘",
+        "mumps": "腮腺炎",
+        "hepatitis_a": "甲型肝炎",
+        "food_poisoning": "食物中毒",
+    }.get(dt, "传染病")
+    level_cn = {
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "extreme": "极高",
+    }.get((risk_level or "").strip().lower(), "中")
+    loc2 = str(location or "").strip() or "本地"
+    pred = max(0, int(predicted_cases_7d))
+    gf = float(growth_factor or 0.0)
+    action_hint = (
+        "建议强化病例监测与信息报告、重点场所卫生管理、风险沟通与医疗救治保障。"
+    )
+    if dt == "dengue":
+        action_hint = "建议同步开展防蚊灭蚊与孳生地清理，强化发热病例监测与就诊指引。"
+    if dt == "food_poisoning":
+        action_hint = (
+            "建议尽快开展就餐史排查与可疑食品封存，强化病例监测、样本采集与风险沟通。"
+        )
+    return (
+        f"综合病例规模与增长趋势，{loc2}{dname}疫情风险评估为{level_cn}风险，"
+        f"预计未来7天新增约{pred}例（模型估算，增长系数约{gf:.2f}），{action_hint}"
+    )
 
 
 class RiskAssessmentAgent(BaseAgent):
@@ -392,14 +527,40 @@ class RiskAssessmentAgent(BaseAgent):
                 },
             },
             "assessment": {
-                "risk_level": decision.get("risk_level") or "medium",
+                "risk_level": str(decision.get("risk_level") or "medium")
+                .strip()
+                .lower(),
                 "predicted_cases_7d": _safe_int(
                     decision.get("predicted_cases_7d"), predicted_7d
                 ),
-                "summary": str(decision.get("summary") or "已完成风险评估。"),
+                "summary": "",
                 "thinking_summary": ts,
             },
         }
+        risk_level = str(result["assessment"]["risk_level"] or "medium").strip().lower()
+        if risk_level not in {"low", "medium", "high", "extreme"}:
+            risk_level = "medium"
+            result["assessment"]["risk_level"] = risk_level
+        pred_out = _safe_int(result["assessment"]["predicted_cases_7d"], predicted_7d)
+        if pred_out <= 0:
+            pred_out = max(0, int(predicted_7d))
+            result["assessment"]["predicted_cases_7d"] = pred_out
+        summary_raw = str(decision.get("summary") or "").strip()
+        if (
+            not summary_raw
+            or "未提供风险评估结论" in summary_raw
+            or len(summary_raw) < 8
+        ):
+            summary_raw = _summary_fallback(
+                disease_type=disease_type,
+                location=location,
+                risk_level=risk_level,
+                predicted_cases_7d=pred_out,
+                growth_factor=growth,
+            )
+        if summary_raw and summary_raw[-1] not in "。！？””）)":
+            summary_raw += "。"
+        result["assessment"]["summary"] = summary_raw
         self.memory.add_message(
             Message.assistant_message(json.dumps(result, ensure_ascii=False, indent=2))
         )

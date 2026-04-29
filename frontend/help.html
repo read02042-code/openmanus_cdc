@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>使用帮助 - 疾控中心应急预案生成系统</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <div class="layout" data-page="help">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>疾控中心应急预案生成系统</h1>
+          <p>OpenManus 架构 · 流程可视化 · 合规可追溯</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="./index.html">预案生成</a>
+        <a href="./preview.html">预案导览</a>
+        <a href="./runs.html">运行记录</a>
+        <a class="active" href="./help.html">使用帮助<span class="tag">指南</span></a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div>
+          <div class="title">使用帮助</div>
+          <div class="subtitle">面向疾控中心日常工作流：输入参数 → 生成预案 → 校验/人工修改 → 导出。</div>
+        </div>
+        <div class="badge">中文提示 · 引导明确</div>
+      </div>
+
+      <div class="grid">
+        <section class="card span-6">
+          <h2>疾病类型说明</h2>
+          <p>本系统将“疾病类型”与“发生地点”严格解耦，避免事件类型碰撞。</p>
+          <div class="hint">
+            - 新冠：covid19<br />
+            - 流感：influenza<br />
+            - 诺如：norovirus<br />
+            - 其他：other
+          </div>
+        </section>
+
+        <section class="card span-6">
+          <h2>流程与分支</h2>
+          <p>系统按 PlanningFlow 执行线性流程，并在校验不通过时进入人工修改分支。</p>
+          <div class="hint">
+            风险评估 → 措施生成（含规范检索）→ 资源调配（含库存/病例接口）→ 预案校验（含规范检索）→ 导出<br />
+            校验不通过：人工修改 → 重新校验 → 导出
+          </div>
+        </section>
+
+        <section class="card span-12">
+          <h2>人工修改（前端）</h2>
+          <p>当状态显示“等待人工修改”时，你可以在前端选择：</p>
+          <div class="hint">
+            - 不修改继续校验：用于快速重试（例如网络波动导致校验失败）<br />
+            - 不修改直接导出：用于应急演示或先导出初稿<br />
+            - 编辑 JSON 后提交：用于对关键字段/章节/内容进行人工修订后再校验
+          </div>
+        </section>
+
+        <section class="card span-12">
+          <h2>常见问题</h2>
+          <div class="hint">
+            - 下载文件后缀：系统会自动以 .docx 下载。<br />
+            - 轮询频率：默认 2 秒一次刷新，生成较慢时属于正常现象。<br />
+            - 导出失败 Permission denied：通常是同名文件正被打开/占用，系统会自动改名后导出。<br />
+            - Docker 端口：前端 5173、后端 8000，需要映射到宿主机才能在浏览器访问。
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="./app.js"></script>
+</body>
+
+</html>

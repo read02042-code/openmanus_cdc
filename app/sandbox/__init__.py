@@ -4,6 +4,7 @@ Docker Sandbox Module
 Provides secure containerized execution environment with resource limits
 and isolation for running untrusted code.
 """
+
 from app.sandbox.client import (
     BaseSandboxClient,
     LocalSandboxClient,
@@ -14,8 +15,15 @@ from app.sandbox.core.exceptions import (
     SandboxResourceError,
     SandboxTimeoutError,
 )
-from app.sandbox.core.manager import SandboxManager
-from app.sandbox.core.sandbox import DockerSandbox
+
+try:
+    from app.sandbox.core.sandbox import DockerSandbox
+except Exception:
+    DockerSandbox = None  # type: ignore[assignment]
+try:
+    from app.sandbox.core.manager import SandboxManager
+except Exception:
+    SandboxManager = None  # type: ignore[assignment]
 
 
 __all__ = [
